@@ -1,23 +1,20 @@
-**Note:**
-We are excited to release Guard 2.1! We recommend building locally from source code or to install using pre-built binaries. Due to dependencies on [one of the PRs](https://github.com/chyh1990/yaml-rust/pull/180) for [yaml-rust](https://github.com/chyh1990/yaml-rust) library, we are not currently able to publish to various package managers including crates.io.
-
 # AWS CloudFormation Guard
 
 **Validate Cloud Environments with Policy-as-Code**
 
 AWS CloudFormation Guard is an open-source general-purpose policy-as-code evaluation tool. It provides developers with a simple-to-use, yet powerful and expressive domain-specific language (DSL) to define policies and enables developers to validate JSON- or YAML- formatted structured data with those policies. 
 
-Guard 2.1 release is a complete re-write of the earlier 1.0 version to make the tool general-purpose. With Guard 2.1, developers can continue writing policies for CloudFormation Templates. In addition, developers can use Guard in the following business domains:
+Guard 2.0 release is a complete re-write of the earlier 1.0 version to make the tool general-purpose. With Guard 2.0, developers can continue writing policies for CloudFormation Templates. In addition, developers can use Guard in the following business domains:
 
 1. **Preventative Governance and Compliance (shift left):** validate Infrastructure-as-code (IaC) or infrastructure/service compositions such as CloudFormation Templates, CloudFormation ChangeSets, Terraform JSON configuration files, Kubernetes configurations, and more against Guard policies representing your organizational best practices for security, compliance, and more. For example, developers can use Guard policies with
     1. Terraform plan (in JSON format) for deployment safety assessment checks or Terraform state files to detect live state deviations.
     2. Static assessment of IaC templates to determine network reachability like Amazon Redshift cluster deployed inside a VPC and prevent the provision of such stacks.
 2. **Detective Governance and Compliance:** validate conformity of Configuration Management Database (CMDB) resources such as AWS Config-based configuration items (CIs). For example, developers can use Guard policies against AWS Config CIs to continuously monitor state of deployed AWS and non-AWS resources, detect violations from policies, and trigger remediation.
-3. **Deployment Safety:** validate CloudFormation ChangeSets to ensure changes are safe before deployment. For example, renaming an Amazon DynamoDB Table will cause a replacement of the Table. With Guard 2.1, you can prevent such changes in your CI/CD pipelines. 
+3. **Deployment Safety:** validate CloudFormation ChangeSets to ensure changes are safe before deployment. For example, renaming an Amazon DynamoDB Table will cause a replacement of the Table. With Guard 2.0, you can prevent such changes in your CI/CD pipelines. 
 
-> **NOTE**: If you are using Guard 1.0, we highly recommend adopting Guard 2.1 because Guard 2.1 is a major release that introduces multiple features to simplify your current policy-as-code experience. Guard 2.1 is backward incompatible with your Guard 1.0 rules and can result in breaking changes. To migrate from Guard 1.0 to Guard 2.1, 1) use migrate command to transition your existing 1.0 rules to 2.0 rules and 2) read all new Guard 2.1 features.
+> **NOTE**: If you are using Guard 1.0, we highly recommend adopting Guard 2.0 because Guard 2.0 is a major release that introduces multiple features to simplify your current policy-as-code experience. Guard 2.0 and higher versions are backward incompatible with your Guard 1.0 rules and can result in breaking changes. To migrate from Guard 1.0 to Guard 2.0, 1) use migrate command to transition your existing 1.0 rules to 2.0 rules and 2) read all new Guard 2.0 features.
 > 
-> You can find code related to Guard 2.1 on the main branch of the repo and code related to Guard 1.0 on [Guard1.0 branch](https://github.com/aws-cloudformation/cloudformation-guard/tree/Guard1.0) of the repo.
+> You can find code related to Guard 2.0 on the main branch of the repo and code related to Guard 1.0 on [Guard1.0 branch](https://github.com/aws-cloudformation/cloudformation-guard/tree/Guard1.0) of the repo.
 
 **Guard In Action**
 
@@ -56,7 +53,7 @@ Type == /AWS::S3::Bucket/
 > Guard supports all primitives `string, integer (64), float (64), bool, char, regex` and specialized range expression like `r(10, 200)`, for specifying ranges of values. It supports general key value pair maps (a.k.a associative arrays/struct) like `{ "my-map": { "nested-maps": [ { "key": 10, "value": 20 } ] } },` and arrays of primitives or key-value pair maps like `[10, 20, 30] or [{ Key: "MyApp", Value: "PROD}, ..]`.
 
 **5) What binary and unary comparison operators can I use?**
-> *Unary Operators:* `exists, empty, is_string, is_list, is_struct, not(!)`
+> *Unary Operators:* `exists, empty, is_string, is_list, is_struct, is_bool, is_int, is_float, not(!)`
 > *Binary Operators:* `==, !=, >, >=, <, <=, IN `
 >
 > Most operators are self-explanatory. A few important points: 
@@ -219,11 +216,11 @@ Check `help` to see if it is working.
 
 ```bash
 $ cfn-guard help
-cfn-guard 2.1
+cfn-guard 2.1.3
 
   Guard is a general-purpose tool that provides a simple declarative syntax to define 
-  policy-as-code as rules to validate against any structed hierarchical data (like JSON/YAML).
-  Rules are composed of clauses expressed using Conjuctive Normal Form
+  policy-as-code as rules to validate against any structured hierarchical data (like JSON/YAML).
+  Rules are composed of clauses expressed using Conjunctive Normal Form
   (fancy way of saying it is a logical AND of OR clauses). Guard has deep
   integration with CloudFormation templates for evaluation but is a general tool
   that equally works for any JSON- and YAML- data.
@@ -244,12 +241,12 @@ SUBCOMMANDS:
     test          Built in unit testing capability to validate a Guard rules file against
                   unit tests specified in YAML format to determine each individual rule's success
                   or failure testing.
-    validate      Evaluates rules against the data files to determine success or failure. 
-                  You can point rules flag to a rules directory and point data flag to a data directory. 
-                  When pointed to a directory it will read all rules in the directory file and evaluate 
+    validate      Evaluates rules against the data files to determine success or failure.
+                  You can point rules flag to a rules directory and point data flag to a data directory.
+                  When pointed to a directory it will read all rules in the directory file and evaluate
                   them against the data files found in the directory. The command can also point to a
                   single file and it would work as well.
-                  Note - When pointing the command to a directory, the directory may not contain a mix of 
+                  Note - When pointing the command to a directory, the directory may not contain a mix of
                   rules and data files. The directory being pointed to must contain only data files,
                   or rules files.
 ```
@@ -485,6 +482,58 @@ cfn-guard test -r api_gateway_private_access.guard -t api_gateway_private_access
 
 Read [Guard: Unit Testing](docs/UNIT_TESTING.md) for more information on unit testing. To know about other commands read the [Readme in the guard directory](guard/README.md).
 
+## Rule authoring references
+
+As a starting point for writing Guard rules for yourself or your organisation we recommend following [this official guide](https://docs.aws.amazon.com/cfn-guard/latest/ug/writing-rules.html)
+
+### Quick links:
+
+[Writing AWS CloudFormation Guard rules](https://docs.aws.amazon.com/cfn-guard/latest/ug/writing-rules.html)
+1. [Clauses](https://docs.aws.amazon.com/cfn-guard/latest/ug/writing-rules.html#clauses)
+2. [Using queries in clauses](https://docs.aws.amazon.com/cfn-guard/latest/ug/writing-rules.html#clauses-queries)
+3. [Using operators in clauses](https://docs.aws.amazon.com/cfn-guard/latest/ug/writing-rules.html#clauses-operators)
+4. [Using custom messages in clauses](https://docs.aws.amazon.com/cfn-guard/latest/ug/writing-rules.html#clauses-custom-messages)
+5. [Combining clauses](https://docs.aws.amazon.com/cfn-guard/latest/ug/writing-rules.html#combining-clauses)
+6. [Using blocks with Guard rules](https://docs.aws.amazon.com/cfn-guard/latest/ug/writing-rules.html#blocks)
+7. [Defining queries and filtering](https://docs.aws.amazon.com/cfn-guard/latest/ug/query-and-filtering.html)
+8. [Assigning and referencing variables in AWS CloudFormation Guard rules](https://docs.aws.amazon.com/cfn-guard/latest/ug/variables.html)
+9. [Composing named-rule blocks in AWS CloudFormation Guard](https://docs.aws.amazon.com/cfn-guard/latest/ug/named-rule-block-composition.html)
+10. [Writing clauses to perform context-aware evaluations](https://docs.aws.amazon.com/cfn-guard/latest/ug/context-aware-evaluations.html)
+
+
+## AWS Rule Registry
+
+As a reference for Guard rules and rule-sets that contain (on a best-effort basis) the compliance policies that adhere 
+to the industry best practices around usages across AWS resources, we have recently launched 
+[AWS Guard Rules Registry](https://github.com/aws-cloudformation/aws-guard-rules-registry).
+
+
+## Guard Docker Image launched on [ECR public gallery](https://gallery.ecr.aws/aws-cloudformation/cloudformation-guard)
+
+### Prerequisites
+
+1. Install docker. Follow [this guide](https://docs.docker.com/engine/install/).
+1. Have a directory ready on the host you are downloading the docker image to that contains data templates and Guard rules you are planning to use, we may mount this directory and use the files as input to `cfn-guard`. We'll refer this directory to be called `guard-files` in the rest of this guide
+
+### Usage Guide
+
+To use the binary, we should pull the latest docker image, we may do so using the following command:
+```bash
+docker pull public.ecr.aws/aws-cloudformation/cloudformation-guard:latest
+```
+Now go ahead and run the docker image, using the files from directory we have our templates and rules file in, using:
+```bash
+docker run \
+  --mount src=/path/to/guard-files,target=/container/guard-files,type=bind \
+  -it public.ecr.aws/aws-cloudformation/cloudformation-guard:latest \
+  ./cfn-guard validate -d /container/guard-files/template.yml -r /container/guard-files/rule.guard
+```
+We should see the evaluation result emitted out on the console.
+
+### Tagging convention
+
+* We use the tag `latest` for the most recent docker image that gets published in sync with `main` branch of the `cloudformation-guard` GitHub repository.
+* We use the convention `<branch_name>.<github_shorthand_commit_hash>` for tags of historical docker images
 ## License
 
 This project is licensed under the Apache-2.0 License.
